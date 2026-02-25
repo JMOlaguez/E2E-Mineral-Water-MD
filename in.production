@@ -1,0 +1,64 @@
+units real
+atom_style full
+boundary p p f
+neighbor 3.0 bin
+neigh_modify delay 0 every 1 check no
+
+pair_style lj/cut/coul/long 12.0
+bond_style harmonic
+angle_style harmonic
+kspace_style pppm 1.0e-5
+kspace_modify slab 3.0
+
+read_data system_fixed.data
+
+# --- RESCUE MINIMIZATION ---
+minimize 1.0e-4 1.0e-6 100 1000
+reset_timestep 0
+
+# --- COEFFICIENTS ---
+pair_coeff 1 1 0.0000090 3.3020
+pair_coeff 2 2 0.1554 3.1660
+pair_coeff 3 3 0.1554 3.1660
+pair_coeff 4 4 0.0000 0.0000
+pair_coeff 5 5 0.1553 3.1660
+pair_coeff 6 6 0.0000 0.0000
+pair_coeff 7 7 0.1301 2.3500
+pair_coeff 8 8 0.2500 3.8000
+pair_coeff 9 9 0.1554 3.1660
+pair_coeff 10 10 0.0000 0.0000
+pair_modify mix arithmetic tail yes
+bond_coeff 1 450.0 1.0
+bond_coeff 2 554.1 0.9572
+angle_coeff 1 55.0 109.47
+
+group g_water type 5 6
+group g_ox type 5
+
+# --- SHAKE & MOMENTUM ---
+fix shk g_water shake 0.0001 20 0 b 1 a 1
+# Center center-of-mass every 100 steps to prevent unphysical drift in the slab geometry
+fix recenter all momentum 100 linear 1 1 1 angular
+
+# --- LANGEVIN INTEGRATOR ---
+# Using NVE + Langevin instead of standard NVT to provide frictional stabilization 
+# for fast-moving atoms at the vacuum interface.
+# A damping parameter of 100.0 fs is used as the standard for water.
+# 'zero yes' ensures no net momentum is added to the slab system.
+fix lang all langevin 298.0 298.0 100.0 48279 zero yes
+fix integrate all nve
+
+# Maintain a conservative timestep of 0.5 fs for stability
+timestep 0.5
+
+# --- OUTPUTS ---
+compute c1 all chunk/atom bin/1d z lower 0.5 units box
+fix dens g_ox ave/chunk 10 100 1000 c1 density/mass file density_profile.profile
+
+dump 1 all custom 1000 production.lammpstrj id type x y z
+dump_modify 1 sort id
+
+thermo 1000
+run 400000
+
+write_data system_final.data
