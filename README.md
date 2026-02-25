@@ -20,11 +20,11 @@ Simulating hydroxylated surfaces with flexible force fields often leads to sever
 * `/benchmark_data`: Validated `system_final.data` coordinate files to test your local LAMMPS installation.
 
 ## 🚀 Quick Start
-To run the automated workflow on your local machine:
-```bash
-# 1. Clone the repository
-git clone [https://github.com/JMOlaguez/E2E-Mineral-Water-MD.git](https://github.com/JMOlaguez/E2E-Mineral-Water-MD.git)
-cd E2E-Mineral-Water-MD
-
-# 2. Run the orchestrator
-python3 scripts/E2E_Workflow.py
+# Create a working directory
+mkdir run_test && cd run_test
+# Copy necessary files from the repository structure
+cp ../structures/Hematita.cif .
+cp ../lammps_inputs/in.* .
+cp ../scripts/*.py .
+# Run the orchestrator
+python3 manuscript_e2e.py
